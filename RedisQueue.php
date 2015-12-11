@@ -79,19 +79,20 @@ class RedisQueue extends Component implements QueueInterface
             });
         }
 
-        $data = $this->redis->lpop($queue);
+        $rawData = $this->redis->lpop($queue);
 
-        if ($data === null) {
+        if ($rawData === null) {
             return false;
         }
 
-        $this->redis->zadd($queue . ':reserved', [$data => time() + $this->expire]);
-        $data = Json::decode($data);
+        $this->redis->zadd($queue . ':reserved', [$rawData => time() + $this->expire]);
+        $data = Json::decode($rawData);
 
         return [
             'id' => $data['id'],
             'body' => $data['body'],
             'queue' => $queue,
+            'rawData' => $rawData,
         ];
     }
 
@@ -119,6 +120,6 @@ class RedisQueue extends Component implements QueueInterface
      */
     public function delete(array $message)
     {
-        $this->redis->zrem($message['queue'] . ':reserved', $message['body']);
+        $this->redis->zrem($message['queue'] . ':reserved', $message['rawData']);
     }
 }
